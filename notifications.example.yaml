@@ -1,0 +1,28 @@
+---
+teams:
+  - name: "Team One"
+    notification_configs:
+      slack:
+        webhook_secret_env_name: "TEAM_ONE_SLACK_WEBHOOK"
+    features:
+      pr_notification:
+        github_token_env_name: "TEAM_ONE_GITHUB_TOKEN"
+        enable: true
+        urls:
+          - "organizationNameOne/repositoryNameOne"
+          - "organizationNameTwo/repositoryNameTwo"
+      health_check_notification:
+        enable: false
+        urls:
+          - "https://www.httpstatus.com.br/200/"
+          - "https://www.httpstatus.com.br/201/"
+  - name: "Team Two"
+    notification_configs:
+      slack:
+        webhook_secret_env_name: "TEAM_TWO_SLACK_WEBHOOK"
+    features:
+      pr_notification:
+        github_token_env_name: "TEAM_TWO_GITHUB_TOKEN"
+        enable: false
+        urls:
+          - "organizationNameOne/repositoryNameOne"
