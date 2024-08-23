@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/andrepostiga/team-cron-notifier/src/domain/pullRequest"
 	"github.com/andrepostiga/team-cron-notifier/src/domain/team"
+	"log/slog"
 )
 
 type PullRequestFetcher interface {
@@ -16,14 +17,16 @@ type NotifyService interface {
 }
 
 type PRService struct {
+	logger                    *slog.Logger
 	pullRequestFetcherService PullRequestFetcher
 	notifyService             NotifyService
 }
 
-func NewPRService(pullRequestFetcherService PullRequestFetcher, notifyService NotifyService) *PRService {
+func NewPRService(logger *slog.Logger, pullRequestFetcherService PullRequestFetcher, notifyService NotifyService) *PRService {
 	return &PRService{
 		pullRequestFetcherService: pullRequestFetcherService,
 		notifyService:             notifyService,
+		logger:                    logger,
 	}
 }
 

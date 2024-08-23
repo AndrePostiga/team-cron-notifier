@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/andrepostiga/team-cron-notifier/src/domain/pullRequest"
 	"github.com/andrepostiga/team-cron-notifier/src/domain/team"
-	"github.com/andrepostiga/team-cron-notifier/src/seedwork"
 	"net/http"
 	"net/url"
 	"os"
@@ -34,6 +33,25 @@ func NewSlackService(client *http.Client, ops *config.SlackApiConfig) (*Slack, e
 
 func (slack *Slack) SendMessage(ctx context.Context, pullRequests []pullRequest.PullRequest, team team.Team) error {
 
+	slackConfig, err := team.NotificationSettings().GetSlackConfig()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve slack configuration from team: %w", err)
+	}
+
+	message, err := createMessage(pullRequests)
+	if err != nil {
+		return fmt.Errorf("failed to create slack message from template: %w", err)
+	}
+
+	err = slack.doRequest(ctx, slackConfig, message)
+	if err != nil {
+		return fmt.Errorf("failed to send message to slack: %w", err)
+	}
+
+	return nil
+}
+
+func createMessage(pullRequests []pullRequest.PullRequest) (*bytes.Buffer, error) {
 	items := make(map[string][]interface{}, len(pullRequests))
 
 	for _, pr := range pullRequests {
@@ -42,36 +60,34 @@ func (slack *Slack) SendMessage(ctx context.Context, pullRequests []pullRequest.
 
 	tmpl, err := template.New("message").Funcs(template.FuncMap{"toJson": toJson}).Parse(MessageTemplate)
 	if err != nil {
-		return fmt.Errorf("error parsing slack request template: %w", err)
+		return nil, fmt.Errorf("error parsing slack request template: %w", err)
 	}
 
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, items); err != nil {
-		return fmt.Errorf("error executing slack request template: %w", err)
+	buf := &bytes.Buffer{}
+	if err := tmpl.Execute(buf, items); err != nil {
+		return nil, fmt.Errorf("error executing slack request template: %w", err)
 	}
 
-	seedwork.PrintIndentedLog(buf)
+	return buf, nil
+}
 
-	slackConfig, err := team.NotificationSettings().GetSlackConfig()
-	if err != nil {
-		return fmt.Errorf("Failed to retrieve slack configuration from team: %v", err)
-	}
+func (slack *Slack) doRequest(ctx context.Context, slackConfig team.SlackConfig, message *bytes.Buffer) error {
 	slackUrl := slack.baseUrl.String() + "/" + os.Getenv(slackConfig.GetWebhookSecretEnvName())
 
-	req, err := http.NewRequest("POST", slackUrl, &buf)
+	req, err := http.NewRequestWithContext(ctx, "POST", slackUrl, message)
 	if err != nil {
-		return fmt.Errorf("Failed to create HTTP request: %v", err)
+		return fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := slack.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Failed to send slack api HTTP request: %v", err)
+		return fmt.Errorf("failed to send slack api HTTP request: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Error on slack api Status code:%d error: %v", resp.StatusCode, err)
+		return fmt.Errorf("error on slack api Status code:%d error: %v", resp.StatusCode, err)
 	}
 
 	return nil
