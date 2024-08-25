@@ -6,6 +6,8 @@ teams:
         webhook_secret_env_name: "TEAM_ONE_SLACK_WEBHOOK"
     features:
       pr_notification:
+        exclude_pr_from_users:
+          - "example_author_name"
         github_token_env_name: "TEAM_ONE_GITHUB_TOKEN"
         enable: true
         urls:
