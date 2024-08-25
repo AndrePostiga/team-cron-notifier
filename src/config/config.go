@@ -4,6 +4,7 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/joho/godotenv"
 	"log"
+	"os"
 )
 
 type HttpClientConfig struct {
@@ -29,6 +30,11 @@ type Config struct {
 }
 
 func LoadEnv() error {
+	if _, err := os.Stat(".env"); os.IsNotExist(err) {
+		log.Println(".env file does not exist, skipping loading environment variables")
+		return nil
+	}
+
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
