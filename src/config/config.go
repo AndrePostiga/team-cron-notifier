@@ -18,7 +18,6 @@ type SlackApiConfig struct {
 
 type GithubApiConfig struct {
 	BaseUrl    string           `env:"GITHUB_API_BASE_URL"`
-	Token      string           `env:"GITHUB_API_GPG_TOKEN"`
 	HTTPClient HttpClientConfig `envPrefix:"GITHUB_API_HTTP_CLIENT_"` // GITHUB_API_HTTP_CLIENT_TIMEOUT_IN_SECONDS
 }
 

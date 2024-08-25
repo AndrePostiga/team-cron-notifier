@@ -48,7 +48,7 @@ func BuildJob(ctx context.Context) {
 	}
 
 	// Create External Services
-	githubService, err := github.NewGithubService(web.NewClient(logger, cfg.GithubApi.HTTPClient), cfg.GithubApi)
+	githubService, err := github.NewGithubService(logger, web.NewClient(logger, cfg.GithubApi.HTTPClient), cfg.GithubApi)
 	if err != nil {
 		logger.Error("failed to create Github API: %w", err)
 		panic(err)

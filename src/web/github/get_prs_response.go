@@ -4,6 +4,11 @@ type GetPullRequestsResponse struct {
 	Data struct {
 		Repository Repository `json:"repository"`
 	} `json:"data"`
+	Errors []struct {
+		Type    string   `json:"type"`
+		Path    []string `json:"path"`
+		Message string   `json:"message"`
+	} `json:"errors"`
 }
 
 type Repository struct {

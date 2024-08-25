@@ -77,7 +77,7 @@ func (job *NotificationService) Start(ctx context.Context, data *InputData) erro
 			teamData.Features.PrNotification.GithubTokenEnvName,
 		)
 
-		job.logger.Info("job is starting for team %s", myTeam.Name(), "content", myTeam)
+		job.logger.Info("job is starting for team", "teamName", myTeam.Name(), "content", teamData)
 
 		prs, err := job.PrService.GetPrsToNotify(ctx, myTeam)
 		if err != nil {

@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/andrepostiga/team-cron-notifier/src/config"
 	"github.com/andrepostiga/team-cron-notifier/src/domain/pullRequest"
 	"github.com/andrepostiga/team-cron-notifier/src/domain/team"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,11 +18,12 @@ import (
 )
 
 type Github struct {
+	logger  *slog.Logger
 	client  *http.Client
 	baseUrl *url.URL
 }
 
-func NewGithubService(client *http.Client, ops config.GithubApiConfig) (*Github, error) {
+func NewGithubService(logger *slog.Logger, client *http.Client, ops config.GithubApiConfig) (*Github, error) {
 	baseUrl, err := url.Parse(ops.BaseUrl)
 	if err != nil {
 		return nil, err
@@ -29,6 +32,7 @@ func NewGithubService(client *http.Client, ops config.GithubApiConfig) (*Github,
 	return &Github{
 		client:  client,
 		baseUrl: baseUrl,
+		logger:  logger,
 	}, nil
 }
 
@@ -50,10 +54,14 @@ func (git *Github) GetPullRequests(ctx context.Context, team team.Team) ([]pullR
 	for _, repo := range team.PrNotification().Repositories() {
 		prsInRepo, err := git.doRequest(ctx, repo, team)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get pull requests for %s from github: %w", repo, err)
+			git.logger.ErrorContext(ctx, "failed to get pull requests from github:", "repoName", repo, "error", err)
 		}
 
 		prs = append(prs, prsInRepo...)
+	}
+
+	if len(prs) == 0 {
+		return nil, errors.New("failed to obtain github data")
 	}
 
 	return prs, nil
@@ -102,6 +110,11 @@ func (git *Github) doRequest(ctx context.Context, orgRepositoryName string, team
 	var respData GetPullRequestsResponse
 	if err := json.Unmarshal(body, &respData); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body: %v", err)
+	}
+
+	if len(respData.Errors) > 0 {
+		git.logger.ErrorContext(ctx, "error when try to get github pr data", "repoName", orgRepositoryName, "error", respData.Errors)
+		return nil, fmt.Errorf("failed to get from github: %v", err)
 	}
 
 	prs := MapPullRequestsToEntity(respData.Data.Repository.PullRequests)
