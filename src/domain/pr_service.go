@@ -40,6 +40,8 @@ func (svc *PRService) GetPrsToNotify(ctx context.Context, team team.Team) ([]pul
 		return nil, err
 	}
 
+	pullRequests = removePrsFromUsers(team, pullRequests)
+
 	return pullRequests, nil
 }
 
@@ -54,4 +56,29 @@ func (svc *PRService) NotifyPrs(ctx context.Context, pullRequests []pullRequest.
 	}
 
 	return nil
+}
+
+func removePrsFromUsers(t team.Team, prs []pullRequest.PullRequest) []pullRequest.PullRequest {
+	usersToExclude := t.PrNotification().UserExclusionList()
+	if len(usersToExclude) == 0 {
+		return prs
+	}
+
+	filteredPrs := prs[:0]
+	for _, pr := range prs {
+		exclude := false
+
+		for _, user := range usersToExclude {
+			if pr.Author().Name() == user {
+				exclude = true
+				break
+			}
+		}
+
+		if !exclude {
+			filteredPrs = append(filteredPrs, pr)
+		}
+	}
+
+	return filteredPrs
 }

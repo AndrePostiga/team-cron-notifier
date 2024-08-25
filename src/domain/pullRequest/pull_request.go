@@ -130,8 +130,8 @@ func (pr *PullRequest) NumberOfRequestChanges() uint {
 	return pr.numberOfRequestChanges
 }
 
-func (pr *PullRequest) Author() Author {
-	return pr.author
+func (pr *PullRequest) Author() *Author {
+	return &pr.author
 }
 
 func (pr *PullRequest) GetOpenedDays() uint {

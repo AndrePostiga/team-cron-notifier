@@ -20,6 +20,7 @@ type Teams struct {
 	} `yaml:"notification_configs"`
 	Features struct {
 		PrNotification struct {
+			ExcludePrFromUsers []string `yaml:"exclude_pr_from_users"`
 			GithubTokenEnvName string   `yaml:"github_token_env_name"`
 			Urls               []string `yaml:"urls"`
 		} `yaml:"pr_notification"`
@@ -40,6 +41,7 @@ func (t Teams) LogValue() slog.Value {
 		slog.Group("Features",
 			slog.Group("PrNotification",
 				slog.String("GithubTokenEnvName", "******"),
+				slog.Any("ExcludePrFromUsers", t.Features.PrNotification.ExcludePrFromUsers),
 				slog.Any("Urls", t.Features.PrNotification.Urls),
 			),
 			slog.Group("HealthCheckNotification",
@@ -75,6 +77,7 @@ func (job *NotificationService) Start(ctx context.Context, data *InputData) erro
 			teamData.Features.HealthCheckNotification.Urls,
 			team.NewGeneralSettings(team.NewSlackConfig(teamData.NotificationConfigs.Slack.WebhookSecretEnvName)),
 			teamData.Features.PrNotification.GithubTokenEnvName,
+			teamData.Features.PrNotification.ExcludePrFromUsers,
 		)
 
 		job.logger.Info("job is starting for team", "teamName", myTeam.Name(), "content", teamData)

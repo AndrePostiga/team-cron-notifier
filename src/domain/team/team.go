@@ -12,11 +12,11 @@ type Team struct {
 	githubApiToken          string
 }
 
-func NewTeam(name string, prs []string, healthchecks []string, notificationConfigs GeneralSettings, githubApiToken string) Team {
+func NewTeam(name string, prs []string, healthchecks []string, notificationConfigs GeneralSettings, githubApiToken string, excludePrFromUsers []string) Team {
 	return Team{
 		name:                    name,
-		prNotification:          NewPrNotification(true, prs),
-		healthCheckNotification: NewHealthCheckNotification(true, healthchecks),
+		prNotification:          NewPrNotification(true, prs, excludePrFromUsers),
+		healthCheckNotification: NewHealthCheckNotification(false, healthchecks),
 		notificationSettings:    notificationConfigs,
 		githubApiToken:          githubApiToken,
 	}
