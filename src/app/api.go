@@ -3,7 +3,9 @@ package app
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
+	"github.com/andrepostiga/team-cron-notifier/src/config"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,8 +14,52 @@ import (
 )
 
 func BuildApi(ctx context.Context) {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(fmt.Errorf("Failed to load config: %v", err))
+	}
+
+	logLevel := new(slog.LevelVar)
+	err = logLevel.UnmarshalText([]byte(cfg.LogLevel))
+	if err != nil {
+		slog.Error("Failed to load config", "error", err)
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level:     logLevel,
+		AddSource: true,
+	}))
+	slog.SetDefault(logger)
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", healthCheckHandler)
+
+	// Health check handler with request and response logging
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Extract only the headers of interest
+		headers := map[string]string{
+			"Host":            r.Header.Get("Host"),
+			"Accept-Encoding": r.Header.Get("Accept-Encoding"),
+			"Content-Length":  r.Header.Get("Content-Length"),
+			"Content-Type":    r.Header.Get("Content-Type"),
+		}
+
+		// Process the request
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+
+		// Log the request and response together
+		slog.Info("Request and Response",
+			"method", r.Method,
+			"url", r.URL.String(),
+			"remote_addr", r.RemoteAddr,
+			"headers", headers,
+			"status", http.StatusOK,
+			"duration", time.Since(start),
+		)
+	})
 
 	server := &http.Server{
 		Addr:    ":3000",
@@ -23,10 +69,10 @@ func BuildApi(ctx context.Context) {
 	// Start server in a separate goroutine
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Server failed: %s\n", err)
+			slog.Error("Server failed", "error", err)
 		}
 	}()
-	log.Println("Server started on :3000")
+	slog.Info("Server started", "address", ":3000")
 
 	// Wait for interrupt signal to gracefully shutdown the server
 	shutdown := make(chan os.Signal, 1)
@@ -34,9 +80,9 @@ func BuildApi(ctx context.Context) {
 
 	select {
 	case <-ctx.Done():
-		log.Println("Context canceled, shutting down server.")
+		slog.Info("Context canceled, shutting down server.")
 	case sig := <-shutdown:
-		log.Printf("Received signal: %s, shutting down server.", sig)
+		slog.Info("Received signal, shutting down server", "signal", sig)
 	}
 
 	// Create a context with timeout for the shutdown
@@ -44,14 +90,8 @@ func BuildApi(ctx context.Context) {
 	defer cancel()
 
 	if err := server.Shutdown(ctxShutdown); err != nil {
-		log.Fatalf("Server forced to shutdown: %s", err)
+		slog.Error("Server forced to shutdown", "error", err)
 	}
 
-	log.Println("Server exiting")
-}
-
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	slog.Info("Server exiting")
 }
