@@ -17,7 +17,7 @@ func (lrt *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 	// Log the HTTP request details
 	lrt.Logger.Info("HTTP Request",
 		slog.String("method", req.Method),
-		slog.String("url", req.URL.String()),
+		slog.String("url", req.URL.Scheme),
 		slog.String("host", req.Host),
 	)
 
@@ -32,7 +32,7 @@ func (lrt *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 	if err != nil {
 		lrt.Logger.Error("HTTP Request failed",
 			slog.String("method", req.Method),
-			slog.String("url", req.URL.String()),
+			slog.String("url", req.URL.Host),
 			slog.String("host", req.Host),
 			slog.Duration("duration", duration),
 			slog.String("error", err.Error()),
@@ -43,7 +43,7 @@ func (lrt *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 
 	lrt.Logger.Info("HTTP Response",
 		slog.String("method", req.Method),
-		slog.String("url", req.URL.String()),
+		slog.String("url", req.URL.Host),
 		slog.String("host", req.Host),
 		slog.Int("status", resp.StatusCode),
 		slog.Duration("duration", duration),
