@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/andrepostiga/team-cron-notifier/src/domain/pullRequest"
 	"github.com/andrepostiga/team-cron-notifier/src/domain/team"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -83,11 +84,17 @@ func (slack *Slack) doRequest(ctx context.Context, slackConfig team.SlackConfig,
 
 	resp, err := slack.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send slack api HTTP request: %v", err)
+		return fmt.Errorf("failed to send Slack API HTTP request: %v", err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("error on slack api Status code:%d error: %v", resp.StatusCode, err)
+		// Read the response body for more detailed error information
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return fmt.Errorf("error on Slack API request. Status code: %d. Failed to read response body: %v", resp.StatusCode, readErr)
+		}
+		return fmt.Errorf("error on Slack API request. Status code: %d. Response: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	return nil
