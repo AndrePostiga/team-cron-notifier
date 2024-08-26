@@ -36,27 +36,27 @@ func BuildJob(ctx context.Context) {
 
 	yamlFile, err := os.ReadFile("notifications.yaml")
 	if err != nil {
-		logger.Error("error reading config file: %w", err)
+		logger.Error("error reading config file", "error", err)
 		panic(err)
 	}
 
 	var prNotificationData services.InputData
 	err = yaml.Unmarshal(yamlFile, &prNotificationData)
 	if err != nil {
-		logger.Error("error unmarshalling config file: %w", err)
+		logger.Error("error unmarshalling config file", "error", err)
 		panic(err)
 	}
 
 	// Create External Services
 	githubService, err := github.NewGithubService(logger, web.NewClient(logger, cfg.GithubApi.HTTPClient), cfg.GithubApi)
 	if err != nil {
-		logger.Error("failed to create Github API: %w", err)
+		logger.Error("failed to create Github API", "error", err)
 		panic(err)
 	}
 
 	slackService, err := slack.NewSlackService(web.NewClient(logger, cfg.SlackApi.HTTPClient), &cfg.SlackApi)
 	if err != nil {
-		logger.Error("failed to create Slack API: %w", err)
+		logger.Error("failed to create Slack API", "error", err)
 		panic(err)
 	}
 
