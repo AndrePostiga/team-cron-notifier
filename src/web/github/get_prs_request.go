@@ -25,6 +25,7 @@ const (
 					}
 					createdAt
 					state
+					isDraft
 					reviews(first: 50, states: $reviewStates) {
 						nodes {
 							state

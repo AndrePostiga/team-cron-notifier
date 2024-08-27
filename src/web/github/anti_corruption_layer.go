@@ -24,6 +24,7 @@ func MapPullRequestsToEntity(response PullRequest) []pullRequest.PullRequest {
 			author,
 			createdAt,
 			state,
+			pr.IsDraft,
 			labels,
 			reviews,
 			repository,

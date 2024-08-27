@@ -29,6 +29,7 @@ type PullRequestNodes struct {
 	} `json:"author"`
 	CreatedAt  string  `json:"createdAt"`
 	State      string  `json:"state"`
+	IsDraft    bool    `json:"isDraft"`
 	Reviews    Reviews `json:"reviews"`
 	Labels     Labels  `json:"labels"`
 	Repository struct {

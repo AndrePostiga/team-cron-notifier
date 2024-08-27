@@ -41,6 +41,7 @@ func (svc *PRService) GetPrsToNotify(ctx context.Context, team team.Team) ([]pul
 	}
 
 	pullRequests = removePrsFromUsers(team, pullRequests)
+	pullRequests = removeDraftPrs(pullRequests)
 
 	return pullRequests, nil
 }
@@ -81,4 +82,16 @@ func removePrsFromUsers(t team.Team, prs []pullRequest.PullRequest) []pullReques
 	}
 
 	return filteredPrs
+}
+
+func removeDraftPrs(requests []pullRequest.PullRequest) []pullRequest.PullRequest {
+	var nonDraftPRs []pullRequest.PullRequest
+
+	for _, pr := range requests {
+		if !pr.IsDraft() {
+			nonDraftPRs = append(nonDraftPRs, pr)
+		}
+	}
+
+	return nonDraftPRs
 }

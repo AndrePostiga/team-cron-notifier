@@ -30,6 +30,7 @@ type PullRequest struct {
 	createdAt              time.Time
 	openedDays             uint
 	state                  State
+	isDraft                bool
 	reviews                []Review
 	numberOfApproves       uint
 	numberOfRequestChanges uint
@@ -45,6 +46,7 @@ func NewPullRequest(
 	author Author,
 	createdAt time.Time,
 	state State,
+	isDraft bool,
 	labels []string,
 	reviews []Review,
 	repository Repository) PullRequest {
@@ -56,6 +58,7 @@ func NewPullRequest(
 		author:     author,
 		createdAt:  createdAt,
 		state:      state,
+		isDraft:    isDraft,
 		labels:     labels,
 		reviews:    reviews,
 		repository: repository,
@@ -149,3 +152,5 @@ func (pr Priority) ToString() string {
 func (pr *PullRequest) Repository() Repository {
 	return pr.repository
 }
+
+func (pr *PullRequest) IsDraft() bool { return pr.isDraft }
